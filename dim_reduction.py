@@ -9,8 +9,8 @@ from pathlib import Path
 
 def umap_reduce(data, labels=None, n_neighbors=15, n_components=2):
     reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components)
-    embedding = reducer.fit_transform(data, y=labels)
-    return embedding
+    reducer.fit(data, y=labels)
+    return reducer.embedding_, reducer
 
 def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save_as=None, hide=-1):
     fig = plt.figure()
@@ -45,8 +45,8 @@ def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save
 
 cd = Path(__file__).parent
 labels = pd.read_csv(path.join(cd, "ang_change/boba_apr11_labels.csv"))["label"]
-writing = True
-visualising = True
+writing = False
+visualising = False
 search_for_nan = False
 
 if(writing):
@@ -57,7 +57,7 @@ if(writing):
         print("Row indices of NaN values:", nan_indices[0])
         print("Column indices of NaN values:", nan_indices[1])
 
-    reduced = umap_reduce(data)
+    reduced, reducer = umap_reduce(data)
     df = pd.DataFrame(reduced)
     df.to_csv(path.join(cd, "ang_change/boba_apr11_umap2_unsupervised.csv"))
 
