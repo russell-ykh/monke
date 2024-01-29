@@ -18,22 +18,30 @@ def monke_process(data, process, save_as=None):
     
     return processed
 
-def monke_accel(data):
+def vel(data):
+    return np.diff(data, axis=0)
+
+# data = np.genfromtxt("Y2S2/Monke/boba_apr11.csv", skip_header=3, delimiter=",")
+# monke_vel(data, "Y2S2/Monke/boba_apr11_vel.csv")
+
+def accel(data):
     return np.diff(data, n=2, axis=0)
 
 # file_name = path.join(cd, "accel/boba_apr11_accel.csv")
 # monke_accel()
 
-def monke_vel(data):
-    return np.diff(data, axis=0)
+def jerk(data):
+    return np.diff(data, n=3, axis=0)
 
-# data = np.genfromtxt("Y2S2/Monke/boba_apr11.csv", skip_header=3, delimiter=",")
-# monke_vel(data, "Y2S2/Monke/boba_apr11_vel.csv")
+def diff(n):
+    def diff_internal(data):
+        return np.diff(data, n=n, axis=0)
+    return diff_internal
     
 # The number of times the sign changes in a second
-def monke_dir_changes(fps=30):
+def dir_changes(fps=30):
     def dir_changes(data):
-        vel = monke_vel(data)
+        vel = vel(data)
         dir_changes_raw = np.sign(vel[:-1, 1:]) != np.sign(vel[1:, 1:])
 
         frames = dir_changes_raw.shape[0]
@@ -54,9 +62,22 @@ def monke_dir_changes(fps=30):
 
 # data = np.genfromtxt("Y2S2/Monke/dir_change/boba_apr11_vel.csv", skip_header=1, delimiter=",")
 # monke_dir_changes(data, "Y2S2/Monke/dir_change/boba_apr11_dir_changes.csv")
-    
-def monke_ang_changes(data):
-    vel = monke_vel(data)
+
+# The number of times the sign in velocity changes in a second, across all three axes
+# data: monke_dir_changes
+def dir_changes_summed(data):
+    seconds = data.shape[0]
+    feature_axes = data.shape[1]
+    features = feature_axes // 3
+    reshaped = data.reshape((seconds, features, 3))
+    dir_changes_summed = np.sum(reshaped, axis=2)
+    return dir_changes_summed
+
+# data = np.genfromtxt(path.join(cd, "dir_change/boba_apr11_dir_changes.csv"), skip_header=1, delimiter=",")[:, 1:]
+# monke_process(data, monke_dir_changes_summed, save_as=path.join(cd, "dir_change_summed/boba_apr11.csv"))
+
+def ang_changes(data):
+    vel = vel(data)
     
     frames = vel.shape[0]
     features = vel.shape[1]
@@ -80,6 +101,12 @@ def monke_ang_changes(data):
 # data_path = path.join(cd, "raw/boba_apr11.csv")
 # monke_ang_changes(np.genfromtxt(data_path, skip_header=3, delimiter=","), path.join(cd, "ang_change/boba_apr11_ang_changes.csv"))
 
+# The 3D angle between velocities in two frames
+def ang3d_changes(data):
+    pass
+
+## ------------------- LABEL MAKING ------------------- ##
+
 def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
     labels = []
     for index, row in tremour_data_raw.iterrows():
@@ -94,7 +121,7 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
     
     remainder = last_frame - len(labels)
 
-    for a in range(remainder+1):
+    for _ in range(remainder+1):
         labels.append(0)
 
     if save_as is not None:
