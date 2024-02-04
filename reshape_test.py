@@ -29,3 +29,12 @@ import numpy as np
 # print("-")
 # t7 = t6.sum(axis=1)
 # print(t7)
+
+test = np.arange(21).reshape((3, 7))
+
+test2 = np.arange(42, step=2).reshape((3, 7))
+
+print(test)
+print(test2)
+
+print(np.concatenate((test, test2), axis=1))

@@ -129,8 +129,8 @@ def phi_changes(data):
 
     # u is the velocities (or maybe you could think of them as vectors?) of the current frame
     # v is the velocities of the next frame
-    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
-    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
+    ux, uy = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1]
+    vx, vy = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1]
 
     ang_u = phi_of(ux, uy)
     ang_v = phi_of(vx, vy)
@@ -140,52 +140,37 @@ def phi_changes(data):
     return phi_changes
 
 def theta_changes(data):
-    vel = vel(data)
+    velocity = vel(data)
     
-    frames = vel.shape[0]
-    features = vel.shape[1]
+    frames = velocity.shape[0]
+    features = velocity.shape[1]
     body_parts = features//3
 
-    vel_reshaped = vel.reshape((frames, body_parts, 3))
+    vel_reshaped = velocity.reshape((frames, body_parts, 3))
 
     # u is the velocities (or maybe you could think of them as vectors?) of the current frame
     # v is the velocities of the next frame
     ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
     vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
 
-    u_hyp = np.sqrt(np.add(ux**2, uy**2))
-    v_hyp = np.sqrt(np.add(vx**2, vy**2))
+    hyp_u = np.sqrt(np.add(ux**2, uy**2))
 
-    ang_u = np.array(theta_of(uz, u_hyp))
-    ang_v = np.array(theta_of(vz, v_hyp))
+    hyp_v = np.sqrt(np.add(vx**2, vy**2))
+
+    ang_u = np.array(theta_of(uz, hyp_u))
+    ang_v = np.array(theta_of(vz, hyp_v))
 
     theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
     return theta_changes
 
-data = np.genfromtxt(path.join(cd, "dir_change/boba_apr11_dir_changes.csv"), skip_header=1, delimiter=",")[:, 1:]
-monke_process(data, phi_changes, save_as=path.join(cd, "phi", "boba_apr11_phi.csv"))
-
 def ang3d_changes(data):
-    vel = vel(data)
-    
-    frames = vel.shape[0]
-    features = vel.shape[1]
-    body_parts = features//3
+    phi = phi_changes(data)
+    theta = theta_changes(data)
+    ang3d = np.concatenate((phi, theta), axis=1)
+    return ang3d
 
-    vel_reshaped = vel.reshape((frames, body_parts, 3))
-
-    # u is the velocities (or maybe you could think of them as vectors?) of the current frame
-    # v is the velocities of the next frame
-    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
-    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
-
-    uv = np.add(np.multiply(ux, vx), np.multiply(uy, vy), np.multiply(uz, vz))
-    mag_u = np.sqrt(np.add(ux**2, uy**2, uz**2))
-    mag_v = np.sqrt(np.add(vx**2, vy**2, vz**2))
-
-    ang_changes = np.nan_to_num(np.arccos(np.nan_to_num(np.divide(uv, np.multiply(mag_u, mag_v)))))
-
-    return ang_changes
+# data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
+# monke_process(data, ang3d_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_ang3d_change.csv"))
 
 ## ------------------- LABEL MAKING ------------------- ##
 

@@ -7,6 +7,8 @@ import monke_features as mf
 from matplotlib.colors import LinearSegmentedColormap
 from pathlib import Path
 
+cd = Path(__file__).parent
+
 def umap_reduce(data, labels=None, n_neighbors=15, n_components=2):
     reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components)
     reducer.fit(data, y=labels)
@@ -43,15 +45,10 @@ def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save
 
     plt.show()
 
-def pipeline():
-    labels = pd.read_csv(path.join(cd, "accel/boba_apr11_labels.csv"))["label"]
-    writing = False
-    visualising = True
-    search_for_nan = False
+def pipeline(data, labels, visualising, save_as=None, search_for_nan=False):
+    writing = (save_as is not None)
 
     if(writing):
-        data = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11.csv"), skip_header=1, delimiter=",")[:, 1:]
-
         if search_for_nan:
             nan_indices = np.where(np.isnan(data))
             print("Row indices of NaN values:", nan_indices[0])
@@ -59,26 +56,35 @@ def pipeline():
 
         reduced, reducer = umap_reduce(data)
         df = pd.DataFrame(reduced)
-        df.to_csv(path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.csv"))
+        df.to_csv(save_as)
 
     if(visualising):
         if not(writing):
-            df = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.csv"))
-        visualise_reduced(df, labels, save_as=path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.png"))
+            df = data
+        visualise_reduced(df, labels, save_as=save_as)
+
+# data = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11_ang3d_change.csv"), skip_header=1, delimiter=",")[:, 1:]
+# labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
+# save_as = path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.png")
+
+# pipeline(data, labels, True, save_as=save_as)
+        
+reduced = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
+labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
+save_as = path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.png")
+visualise_reduced(reduced, labels, title="Phi and Theta Changes", save_as=save_as)
 
 def quick_umap_results(data, process, labels, n_neighbors=15, n_components=2):
     processed = process(data)
     reduced, mapper = umap_reduce(processed)
     visualise_reduced(reduced, labels)
 
-cd = Path(__file__).parent
+# data_path = path.join(cd, "raw/boba_apr11.csv")
+# data = np.genfromtxt(data_path, skip_header=3, delimiter=",")[:, 1:]
 
-data_path = path.join(cd, "raw/boba_apr11.csv")
-data = np.genfromtxt(data_path, skip_header=3, delimiter=",")[:, 1:]
+# tremour_path = path.join(cd, "raw/boba_apr11_tremours.csv")
+# tremours_raw = pd.read_csv(tremour_path)
 
-tremour_path = path.join(cd, "raw/boba_apr11_tremours.csv")
-tremours_raw = pd.read_csv(tremour_path)
+# labels = mf.generate_labelled_frames(data[:-21, :], tremours_raw)
 
-labels = mf.generate_labelled_frames(data[:-21, :], tremours_raw)
-
-quick_umap_results(data, mf.diff(20), labels)
+# quick_umap_results(data, mf.diff(20), labels)
