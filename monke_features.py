@@ -101,10 +101,15 @@ def ang_changes(data):
 # data_path = path.join(cd, "raw/boba_apr11.csv")
 # monke_ang_changes(np.genfromtxt(data_path, skip_header=3, delimiter=","), path.join(cd, "ang_change/boba_apr11_ang_changes.csv"))
 
-def ang_of(x, y):
+def phi_of(x, y):
     temp = np.arctan2(x, y)
     temp[x < 0] += np.pi
     temp[np.logical_and(x >= 0, y < 0)] += 2*np.pi
+    return temp
+
+def theta_of(x, y):
+    temp = np.arctan2(x, y)
+    temp[x < 0] += np.pi
     return temp
 
 def unsign_to_sign_ang_change(ang):
@@ -127,12 +132,35 @@ def phi_changes(data):
     ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
     vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
 
-    ang_u = ang_of(ux, uy)
-    ang_v = ang_of(vx, vy)
+    ang_u = phi_of(ux, uy)
+    ang_v = phi_of(vx, vy)
 
     temp = np.subtract(ang_v, ang_u)
     phi_changes = unsign_to_sign_ang_change(temp)
     return phi_changes
+
+def theta_changes(data):
+    vel = vel(data)
+    
+    frames = vel.shape[0]
+    features = vel.shape[1]
+    body_parts = features//3
+
+    vel_reshaped = vel.reshape((frames, body_parts, 3))
+
+    # u is the velocities (or maybe you could think of them as vectors?) of the current frame
+    # v is the velocities of the next frame
+    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
+    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
+
+    u_hyp = np.sqrt(np.add(ux**2, uy**2))
+    v_hyp = np.sqrt(np.add(vx**2, vy**2))
+
+    ang_u = np.array(theta_of(uz, u_hyp))
+    ang_v = np.array(theta_of(vz, v_hyp))
+
+    theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
+    return theta_changes
 
 data = np.genfromtxt(path.join(cd, "dir_change/boba_apr11_dir_changes.csv"), skip_header=1, delimiter=",")[:, 1:]
 monke_process(data, phi_changes, save_as=path.join(cd, "phi", "boba_apr11_phi.csv"))
