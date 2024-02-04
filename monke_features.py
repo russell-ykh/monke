@@ -37,6 +37,34 @@ def diff(n):
     def diff_internal(data):
         return np.diff(data, n=n, axis=0)
     return diff_internal
+
+def ang_of(a1, b1):
+    if (type(a1) == float) or (type(b1) == int) or (type(a1) == np.float64):
+        if (a1 >= 0 and b1 >= 0) :
+            return np.arctan(b1/a1)
+        elif a1 < 0:
+            return np.pi + np.arctan(b1/a1)
+        elif (a1 >= 0 and b1 < 0) :
+            return 2 * np.pi + np.arctan(b1/a1)
+    else:
+        temp = []
+        for i in range(len(a1)):
+            temp.append(ang_of(a1[i], b1[i]))
+        return temp
+
+def unsign_to_sign_ang_change(c1):
+    if (type(c1) == float) or (type(c1) == int) or (type(c1) == np.float64):
+        d1 = c1
+        if c1 > np.pi:
+            d1 = c1 - 2 * np.pi
+        elif c1 <= -np.pi:
+            d1 = c1 +  2 * np.pi
+        return d1
+    else:
+        temp = []
+        for i in range(len(c1)):
+            temp.append(unsign_to_sign_ang_change(c1[i]))
+        return temp
     
 # The number of times the sign changes in a second
 def dir_changes(fps=30):
@@ -97,6 +125,34 @@ def ang_changes(data):
     ang_changes = np.nan_to_num(np.arccos(np.nan_to_num(np.divide(uv, np.multiply(mag_u, mag_v)))))
 
     return ang_changes
+
+def phi_changes(data):
+    vel = vel(data)
+    
+    frames = vel.shape[0]
+    features = vel.shape[1]
+    body_parts = features//3
+
+    vel_reshaped = vel.reshape((frames, body_parts, 3))
+
+    # u is the velocities (or maybe you could think of them as vectors?) of the current frame
+    # v is the velocities of the next frame
+    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
+    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
+
+    a0 = (ux, uy)
+    for a1 in range(2):
+        a2 = ("ux", "uy")
+        print(f'the first 20 values of {a2[a1]} is {a0[a1][:20]}')
+
+    ang_u = np.array(ang_of(ux, uy))
+    ang_v = np.array(ang_of(vx, vy))
+
+    temp = np.subtract(ang_v, ang_u)
+    phi_changes = unsign_to_sign_ang_change(temp)
+    #print(type(phi_changes[0]))
+    #print(type(phi_changes[0][0]))
+    return phi_changes
 
 # data_path = path.join(cd, "raw/boba_apr11.csv")
 # monke_ang_changes(np.genfromtxt(data_path, skip_header=3, delimiter=","), path.join(cd, "ang_change/boba_apr11_ang_changes.csv"))
