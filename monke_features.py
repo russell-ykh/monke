@@ -104,7 +104,7 @@ def ang_changes(data):
 def ang_of(x, y):
     temp = np.arctan2(x, y)
     temp[x < 0] += np.pi
-    temp[x >= 0 & y < 0] += 2*np.pi
+    temp[np.logical_and(x >= 0, y < 0)] += 2*np.pi
     return temp
 
 def unsign_to_sign_ang_change(ang):
