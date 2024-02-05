@@ -14,7 +14,7 @@ def umap_reduce(data, labels=None, n_neighbors=15, n_components=2):
     reducer.fit(data, y=labels)
     return reducer.embedding_, reducer
 
-def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save_as=None, hide=-1):
+def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save_fig=None, hide=-1):
     fig = plt.figure()
 
     if hide == 0 or hide == 1:
@@ -40,39 +40,39 @@ def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save
     if title is not None:
         ax.set_title(title)
 
-    if save_as is not None:
-        plt.savefig(save_as, dpi=300)
+    if save_fig is not None:
+        plt.savefig(save_fig, dpi=300)
 
     plt.show()
 
-def pipeline(data, labels, visualising, save_as=None, search_for_nan=False):
-    writing = (save_as is not None)
-
-    if(writing):
+def pipeline(data, labels, save_as=None, save_fig=None, search_for_nan=False):
+    if(save_as is not None):
         if search_for_nan:
             nan_indices = np.where(np.isnan(data))
             print("Row indices of NaN values:", nan_indices[0])
             print("Column indices of NaN values:", nan_indices[1])
 
         reduced, reducer = umap_reduce(data)
-        df = pd.DataFrame(reduced)
-        df.to_csv(save_as)
+        pd.DataFrame(reduced).to_csv(save_as)
 
-    if(visualising):
-        if not(writing):
-            df = data
-        visualise_reduced(df, labels, save_as=save_as)
+    if(save_fig is not None):
+        if (save_as is None):
+            reduced = data
+        visualise_reduced(reduced, labels, save_fig=save_fig)
 
-# data = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11_ang3d_change.csv"), skip_header=1, delimiter=",")[:, 1:]
+accel = np.genfromtxt(path.join(cd, "acceleration", "boba_apr11_accel.csv"), skip_header=1, delimiter=",")[:, 1:]
+ang3d = np.genfromtxt(path.join(cd, "ang3d_change", "boba_apr11_ang3d_change.csv"), skip_header=1, delimiter=",")[:, 1:]
+data = np.concatenate((accel, ang3d), axis=1)
+labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
+save_as_path = path.join(cd, "smushed", "boba_apr11_umap2_unsupervised.csv")
+save_fig_path = path.join(cd, "smushed", "boba_apr11_accel_ang3d_smushed.png")
+
+pipeline(data, labels, save_as=save_as_path, save_fig=save_fig_path)
+        
+# reduced = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
 # labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
 # save_as = path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.png")
-
-# pipeline(data, labels, True, save_as=save_as)
-        
-reduced = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
-labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
-save_as = path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.png")
-visualise_reduced(reduced, labels, title="Phi and Theta Changes", save_as=save_as)
+# visualise_reduced(reduced, labels, title="Phi and Theta Changes", save_as=save_as)
 
 def quick_umap_results(data, process, labels, n_neighbors=15, n_components=2):
     processed = process(data)

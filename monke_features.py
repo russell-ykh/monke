@@ -172,6 +172,36 @@ def ang3d_changes(data):
 # data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
 # monke_process(data, ang3d_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_ang3d_change.csv"))
 
+def changes_in_changes_in_phi_theta(data):
+    velocity = vel(data)
+    
+    frames = velocity.shape[0]
+    features = velocity.shape[1]
+    body_parts = features//3
+
+    vel_reshaped = velocity.reshape((frames, body_parts, 3))
+
+    # u is the velocities (or maybe you could think of them as vectors?) of the current frame
+    # v is the velocities of the next frame
+    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
+    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
+
+    ang_u = phi_of(ux, uy)
+    ang_v = phi_of(vx, vy)
+
+    temp = np.subtract(ang_v, ang_u)
+    
+    phi_changes = unsign_to_sign_ang_change(temp)
+
+    hyp_u = np.sqrt(np.add(ux**2, uy**2))
+
+    hyp_v = np.sqrt(np.add(vx**2, vy**2))
+
+    ang_u = np.array(theta_of(uz, hyp_u))
+    ang_v = np.array(theta_of(vz, hyp_v))
+
+    theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
+
 ## ------------------- LABEL MAKING ------------------- ##
 
 def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):

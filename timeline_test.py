@@ -8,7 +8,7 @@ from pathlib import Path
 
 cd = Path(__file__).parent
 
-data = np.genfromtxt(path.join(cd, "acceleration/boba_apr11_accel.csv"), skip_header=1, delimiter=",")[300:700, :]
+data = np.genfromtxt(path.join(cd, "dir_change/boba_apr11_vel.csv"), skip_header=1, delimiter=",")[300:700, :]
 names_part = ["nose","left_eye","right_eye","left_ear","right_ear","left_shoulder","right_shoulder","left_elbow","right_elbow","left_wrist","right_wrist","left_hip","right_hip","left_knee","right_knee","left_ankle","right_ankle"]
 xyz = ["_x", "_y", "_z"]
 
@@ -34,6 +34,6 @@ for f in range(1, features):
     plt.vlines([450, 690], ymin=feature_ymin, ymax=feature_ymax, colors="red")
     plt.legend()
     plt.xlabel("Frame")
-    plt.ylabel("Acceleration")
-    plt.savefig(path.join(cd, f"timeline/acceleration/boba_apr11_{names[f-1]}_acceleration.png"), dpi=300)
+    plt.ylabel("Velocity (pixels / frame)")
+    plt.savefig(path.join(cd, f"timeline/velocity/boba_apr11_{names[f-1]}_vel.png"), dpi=300)
     plt.show()
