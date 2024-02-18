@@ -60,19 +60,17 @@ def pipeline(data, labels, save_as=None, save_fig=None, search_for_nan=False):
             reduced = data
         visualise_reduced(reduced, labels, save_fig=save_fig)
 
-accel = np.genfromtxt(path.join(cd, "acceleration", "boba_apr11_accel.csv"), skip_header=1, delimiter=",")[:, 1:]
-ang3d = np.genfromtxt(path.join(cd, "ang3d_change", "boba_apr11_ang3d_change.csv"), skip_header=1, delimiter=",")[:, 1:]
-data = np.concatenate((accel, ang3d), axis=1)
-labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
-save_as_path = path.join(cd, "smushed", "boba_apr11_umap2_unsupervised.csv")
-save_fig_path = path.join(cd, "smushed", "boba_apr11_accel_ang3d_smushed.png")
+data = np.genfromtxt(path.join(cd, "cic", "boba_apr11_cic_t020.csv"), skip_header=1, delimiter=",")[:, 1:]
+labels = pd.read_csv(path.join(cd, "cic/boba_apr11_labels.csv"))["label"]
+save_as_path = path.join(cd, "cic", "boba_apr11_umap_t020.csv")
+save_fig_path = path.join(cd, "cic", "boba_apr11_cic_t020.png")
 
 pipeline(data, labels, save_as=save_as_path, save_fig=save_fig_path)
-        
-# reduced = np.genfromtxt(path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
-# labels = pd.read_csv(path.join(cd, "ang3d_change/boba_apr11_labels.csv"))["label"]
-# save_as = path.join(cd, "ang3d_change/boba_apr11_umap2_unsupervised.png")
-# visualise_reduced(reduced, labels, title="Phi and Theta Changes", save_as=save_as)
+
+# reduced = np.genfromtxt(path.join(cd, "cic/boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
+# labels = np.genfromtxt(path.join(cd, "cic/boba_apr11_labels.csv"), skip_header=1, delimiter=",")[:, 1:]
+# save_fig_path = path.join(cd, "cic", "boba_apr11_cic.png")
+# visualise_reduced(reduced, labels, title="Thresholded Changes in 3D Angular Change", save_fig=save_fig_path)
 
 def quick_umap_results(data, process, labels, n_neighbors=15, n_components=2):
     processed = process(data)

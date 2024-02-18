@@ -2,6 +2,7 @@ import os.path as path
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from scipy.signal import find_peaks
 
 cd = Path(__file__).parent
 data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")
@@ -102,14 +103,14 @@ def ang_changes(data):
 # monke_ang_changes(np.genfromtxt(data_path, skip_header=3, delimiter=","), path.join(cd, "ang_change/boba_apr11_ang_changes.csv"))
 
 def phi_of(x, y):
-    temp = np.arctan2(x, y)
-    temp[x < 0] += np.pi
-    temp[np.logical_and(x >= 0, y < 0)] += 2*np.pi
+    temp = np.arctan2(y, x)
+    temp[(y <= 0)] += 2*np.pi
+    #temp[np.logical_and(x >= 0, y < 0)] += 2*np.pi
     return temp
 
 def theta_of(x, y):
-    temp = np.arctan2(x, y)
-    temp[x < 0] += np.pi
+    temp = np.arctan2(y, x)
+    #temp[x < 0] += np.pi
     return temp
 
 def unsign_to_sign_ang_change(ang):
@@ -163,6 +164,10 @@ def theta_changes(data):
     theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
     return theta_changes
 
+# data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
+# monke_process(data, phi_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_phi.csv"))
+# monke_process(data, theta_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_theta.csv"))
+
 def ang3d_changes(data):
     phi = phi_changes(data)
     theta = theta_changes(data)
@@ -171,6 +176,34 @@ def ang3d_changes(data):
 
 # data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
 # monke_process(data, ang3d_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_ang3d_change.csv"))
+
+# The number of times the angle changes SIGNIFICANTLY in a specified window of time
+# window: number of frames to consider for changes
+# threshold: change in change in angle needed to register as a proper change
+def changes_in_changes(angles, window_size, threshold):
+    changes_in_angle_changes = np.diff(angles, axis=0)
+    frames = changes_in_angle_changes.shape[0]
+    features = changes_in_angle_changes.shape[1]
+
+    num_windows = frames - window_size + 1
+    changes_in_changes = []
+
+    for i in range(num_windows):
+        window_raw = angles[i:i+window_size-1]
+        window = changes_in_angle_changes[i:i+window_size-1]
+        window_next = changes_in_angle_changes[i+1:i+window_size]
+        sign_changes = np.sign(window_next) != np.sign(window)
+
+        masked = window_raw * sign_changes
+        counts = []
+        for feature in range(features):
+            differences = np.diff(masked[:, feature][masked[:, feature] != 0])
+            count = np.count_nonzero(np.abs(differences) > threshold, axis=0)
+            counts.append(count)
+
+        changes_in_changes.append(counts)
+
+    return np.array(changes_in_changes)
 
 def changes_in_changes_in_phi_theta(data):
     velocity = vel(data)
@@ -201,6 +234,13 @@ def changes_in_changes_in_phi_theta(data):
     ang_v = np.array(theta_of(vz, hyp_v))
 
     theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
+    phi_cic = changes_in_changes(phi_changes, 30, 0.2)
+    theta_cic = changes_in_changes(theta_changes, 30, 0.2)
+    results = np.concatenate((phi_cic, theta_cic), axis=1)
+    return results
+
+# data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
+# monke_process(data, changes_in_changes_in_phi_theta, save_as=path.join(cd, "cic", "boba_apr11_cic_t020.csv"))
 
 ## ------------------- LABEL MAKING ------------------- ##
 
@@ -227,9 +267,9 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
 
     return labels
 
-# pose_data = pd.read_csv("Y2S2/Monke/boba_apr11_accel.csv")
-# tremour_data_raw = pd.read_csv("Y2S2/Monke/boba_apr11_tremours.csv")
-# generate_labelled_frames(pose_data, tremour_data_raw, "Y2S2/Monke/boba_apr11_frames_annotated.csv")
+# pose_data = pd.read_csv(path.join(cd, "cic", "boba_apr11_cic.csv"))
+# tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
+# generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "cic", "boba_apr11_labels.csv"))
 
 def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
     labels = []

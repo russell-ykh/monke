@@ -28,9 +28,9 @@ skeleton = ax.scatter(x[0], y[0], z[0])#, labels=body_labels, c=body_colors)
 def anim(frame):
     ax.clear()
     ax.set_title(f"{frame} / {frames}")
-    ax.set_xlim(-50, 50)
-    ax.set_ylim(-50, 50)
-    ax.set_zlim(-50, 50)
+    # ax.set_xlim(-50, 50)
+    # ax.set_ylim(-50, 50)
+    # ax.set_zlim(-50, 50)
     tremouring = tremours[frame] == 1 if (frame < len(tremours)) else 0
     ax.scatter(x[frame], y[frame], z[frame], c="red" if tremouring else "blue")
     
