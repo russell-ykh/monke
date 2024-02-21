@@ -153,7 +153,7 @@ def animated3d_upgraded(data, tremours, skeleton):
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
 
-    ax.scatter(x[0], y[0], z[0])
+    ax.scatter(x[0], y[0], z[0], c="tab:blue")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
@@ -169,10 +169,13 @@ def animated3d_upgraded(data, tremours, skeleton):
         # ax.set_zlim(-30, 40)
 
         tremouring = tremours[frame] == 1 if (frame < len(tremours)) else 0
-        ax.scatter(x[frame], y[frame], z[frame], c="red" if tremouring else "blue")
+        ax.scatter(x[frame], y[frame], z[frame], c="tab:red" if tremouring else "tab:blue")
 
+        section_colours = ["tab:pink", "tab:green", "tab:orange"]
+        i = 0
         for section in skeleton:
-            ax.plot(x[frame, section], y[frame, section], z[frame, section], c="red" if tremouring else "blue")
+            ax.plot(x[frame, section], y[frame, section], z[frame, section], c="tab:red" if tremouring else section_colours[i])
+            i+=1
 
     def toggle_pause(event):
         if pause_button.label.get_text() == "Play":
@@ -200,11 +203,14 @@ def animated3d_upgraded(data, tremours, skeleton):
 
     plt.show()
 
-data_3d = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
-labels = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), delimiter=",", dtype=str)[1, 1:][::3]
-bottom_indices = get_indices(labels, ["right_ankle", "right_knee", "right_hip", "left_hip", "left_knee", "left_ankle"])
-top_indices = get_indices(labels, ["right_wrist", "right_elbow", "right_shoulder", "left_shoulder", "left_elbow", "left_wrist"])
-face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
-skeleton = [bottom_indices, top_indices, face_indices]
+def anim3d_test():
+    data_3d = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
+    labels = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), delimiter=",", dtype=str)[1, 1:][::3]
+    bottom_indices = get_indices(labels, ["right_ankle", "right_knee", "right_hip", "left_hip", "left_knee", "left_ankle"])
+    top_indices = get_indices(labels, ["right_wrist", "right_elbow", "right_shoulder", "left_shoulder", "left_elbow", "left_wrist"])
+    face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
+    skeleton = [bottom_indices, top_indices, face_indices]
 
-animated3d_upgraded(data_3d, tremours, skeleton)
+    animated3d_upgraded(data_3d, tremours, skeleton)
+
+anim3d_test()

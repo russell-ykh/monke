@@ -2,10 +2,10 @@ import os.path as path
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from scipy.signal import find_peaks
+from monke_skeleton_animation import get_indices
 
 cd = Path(__file__).parent
-data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")
+data = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
 
 # General-purpose function for processing DLC 3D coordinate data CSV files
 # data: Input data, usually as a Numpy array
@@ -242,6 +242,56 @@ def changes_in_changes_in_phi_theta(data):
 # data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
 # monke_process(data, changes_in_changes_in_phi_theta, save_as=path.join(cd, "cic", "boba_apr11_cic_t020.csv"))
 
+def get_joints(headers):
+    joints_total = []
+    joints_total.append(get_indices(headers, ["right_ankle", "right_knee", "right_hip"]))
+    joints_total.append(get_indices(headers, ["left_ankle", "left_knee", "left_hip"]))
+    joints_total.append(get_indices(headers, ["right_wrist", "right_elbow", "right_shoulder"]))
+    joints_total.append(get_indices(headers, ["left_wrist", "left_elbow", "left_shoulder"]))
+    return joints_total
+
+# headers = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), delimiter=",", dtype=str)[1, 1:][::3]
+# joints = get_joints(headers)
+
+# The change in 2D angle of joints, manually identified
+# data: raw input positional data
+# joints: indices of connected body parts!
+def change_in_joint_angle(joints):
+    def change_in_joint_angle_internal(data):
+        frames = data.shape[0]
+        features = data.shape[1]
+        body_parts = features//3
+
+        reshaped = data.reshape((frames, 3, body_parts))
+        angles_total = None
+
+        for joint in joints:
+            joint_a = reshaped[:, :, joint[0]]
+            joint_b = reshaped[:, :, joint[1]]
+            joint_c = reshaped[:, :, joint[2]]
+            ab = np.subtract(joint_b, joint_a)
+            bc = np.subtract(joint_c, joint_b)
+            dot_product = np.sum(ab * bc, axis=1)
+            mag_ab = np.linalg.norm(ab, axis=1)
+            mag_bc = np.linalg.norm(bc, axis=1)
+            angles = np.arccos(dot_product / (mag_ab * mag_bc))
+            angles_total = angles if angles_total is None else np.concatenate((angles_total, angles), axis=1)
+
+        return np.diff(angles_total, axis=0)
+
+    return change_in_joint_angle_internal
+
+# The angular acceleration of joints, manually identified
+# data: raw input positional data
+# joints: indices of connected body parts!
+def change_in_change_in_joint_angle(joints):
+    def change_in_change_in_joint_angle_internal(data):
+        return np.diff(change_in_joint_angle(joints)(data), axis=0)
+
+    return change_in_change_in_joint_angle_internal
+
+# monke_process(data, change_in_change_in_joint_angle(joints), save_as=path.join(cd, "joints", "boba_apr11_accel.csv"))
+
 ## ------------------- LABEL MAKING ------------------- ##
 
 def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
@@ -258,7 +308,7 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
     
     remainder = last_frame - len(labels)
 
-    for _ in range(remainder+1):
+    for _ in range(remainder):
         labels.append(0)
 
     if save_as is not None:
@@ -267,9 +317,9 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
 
     return labels
 
-# pose_data = pd.read_csv(path.join(cd, "cic", "boba_apr11_cic.csv"))
-# tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
-# generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "cic", "boba_apr11_labels.csv"))
+pose_data = pd.read_csv(path.join(cd, "joints", "boba_apr11_accel.csv"))
+tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
+generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "joints", "boba_apr11_accel_labels.csv"))
 
 def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
     labels = []
