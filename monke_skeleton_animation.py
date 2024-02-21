@@ -164,9 +164,10 @@ def animated3d_upgraded(data, tremours, skeleton):
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel("Z")
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.set_zlim(-30, 40)
+        # ax.set_xlim(0, 10)
+        # ax.set_ylim(0, 10)
+        # ax.set_zlim(-30, 40)
+
         tremouring = tremours[frame] == 1 if (frame < len(tremours)) else 0
         ax.scatter(x[frame], y[frame], z[frame], c="red" if tremouring else "blue")
 
@@ -192,7 +193,7 @@ def animated3d_upgraded(data, tremours, skeleton):
     pause_button.on_clicked(toggle_pause)
 
     slider_ax = plt.axes([0.2, 0.01, 0.4, 0.03])
-    slider = Slider(slider_ax, 'Frame', 0, frames, valinit=1, valstep=1)
+    slider = Slider(slider_ax, 'Frame', 0, frames-1, valinit=1, valstep=1)
     slider.on_changed(on_slider_change)
 
     fa = FuncAnimation(fig, anim, interval=1000/30)
