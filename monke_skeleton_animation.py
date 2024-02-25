@@ -104,15 +104,16 @@ def animated3d(data, tremours):
 
 def screenshot_annotated(screenshot, x, y, labels, skeleton_sections):
     plt.imshow(screenshot)
-    plt.scatter(x, y, s=2)
-    plt.axis('off')
 
-    for i in range(len(labels)):
-        label = labels[i]
-        plt.annotate(label, (x[i], y[i]), c="tab:blue", fontsize=6)
+    # for i in range(len(labels)):
+    #     label = labels[i]
+    #     plt.annotate(label, (x[i], y[i]), c="tab:blue", fontsize=6)
 
     for indices in skeleton_sections:
         plt.plot(x[indices], y[indices], linewidth=1, c="tab:blue")
+    
+    plt.scatter(x, y, s=5, c="tab:orange")
+    plt.axis('off')
 
     plt.show()
 
@@ -137,8 +138,8 @@ def get_indices(a, elements):
 # labels = np.genfromtxt(path.join(cd, "raw", "2d", "boba_apr11_camera1.csv"), delimiter=",", dtype=str)[1, 1:][::3]
 # bottom_indices = get_indices(labels, ["right_ankle", "right_knee", "right_hip", "left_hip", "left_knee", "left_ankle"])
 # top_indices = get_indices(labels, ["right_wrist", "right_elbow", "right_shoulder", "left_shoulder", "left_elbow", "left_wrist"])
-# face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
-# skeleton_sections = [bottom_indices, top_indices, face_indices]
+# # face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
+# skeleton_sections = [bottom_indices, top_indices]#, face_indices]
 
 # screenshot_annotated(screenshot_rgb, x, y, labels, skeleton_sections)
 # cap.release()
@@ -208,8 +209,8 @@ def anim3d_test():
     labels = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), delimiter=",", dtype=str)[1, 1:][::3]
     bottom_indices = get_indices(labels, ["right_ankle", "right_knee", "right_hip", "left_hip", "left_knee", "left_ankle"])
     top_indices = get_indices(labels, ["right_wrist", "right_elbow", "right_shoulder", "left_shoulder", "left_elbow", "left_wrist"])
-    face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
-    skeleton = [bottom_indices, top_indices, face_indices]
+    #face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
+    skeleton = [bottom_indices, top_indices]#, face_indices]
 
     animated3d_upgraded(data_3d, tremours, skeleton)
 
