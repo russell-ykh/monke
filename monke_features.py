@@ -317,9 +317,9 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
 
     return labels
 
-pose_data = pd.read_csv(path.join(cd, "joints", "boba_apr11_accel.csv"))
+pose_data = pd.read_csv(path.join(cd, "features", "joints", "boba_apr11_accel.csv"))
 tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
-generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "joints", "boba_apr11_accel_labels.csv"))
+generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "features", "joints", "boba_apr11_accel_labels.csv"))
 
 def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
     labels = []
@@ -343,7 +343,7 @@ def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
     
     return labels
 
-# pose_data = pd.read_csv(path.join(Path(__file__).parent, "dir_change/boba_apr11_dir_changes.csv"))
-# tremour_data_raw = pd.read_csv(path.join(Path(__file__).parent, "raw/boba_apr11_tremours.csv"))
-# file_name = path.join(Path(__file__).parent, "dir_change/boba_apr11_labels.csv")
+# pose_data = pd.read_csv(path.join(cd, "features", "dir_change", "boba_apr11_dir_changes.csv"))
+# tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
+# file_name = path.join(cd, "features", "dir_change", "boba_apr11_labels.csv")
 # generate_labelled_seconds(pose_data, tremour_data_raw, file_name)

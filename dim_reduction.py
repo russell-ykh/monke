@@ -60,10 +60,10 @@ def pipeline(data, labels, three_dimensional=False, title=None, save_as=None, sa
             reduced = data
         visualise_reduced(reduced, labels, three_dimensional=three_dimensional, title=title, save_fig=save_fig)
 
-data = np.genfromtxt(path.join(cd, "joints", "boba_apr11_accel.csv"), skip_header=1, delimiter=",")[:, 1:]
-labels = pd.read_csv(path.join(cd, "joints", "boba_apr11_accel_labels.csv"))["label"]
-save_as_path = path.join(cd, "joints", "boba_apr11_accel_umap3.csv")
-save_fig_path = path.join(cd, "joints", "boba_apr11_accel_umap3.png")
+data = np.genfromtxt(path.join(cd, "features", "joints", "boba_apr11_accel.csv"), skip_header=1, delimiter=",")[:, 1:]
+labels = pd.read_csv(path.join(cd, "features", "joints", "boba_apr11_accel_labels.csv"))["label"]
+save_as_path = path.join(cd, "features", "joints", "boba_apr11_accel_umap3.csv")
+save_fig_path = path.join(cd, "features", "joints", "boba_apr11_accel_umap3.png")
 
 pipeline(data, labels, three_dimensional=True, title="Angular Acceleration of Joints", save_as=save_as_path, save_fig=save_fig_path)
 

@@ -12,7 +12,7 @@ import cv2
 cd = Path(__file__).parent
 
 data_2d = np.genfromtxt(path.join(cd, "raw", "2d", "boba_apr11_camera1.csv"), skip_header=3, delimiter=",")[:, 1:]
-tremours = np.genfromtxt(path.join(cd, "acceleration", "boba_apr11_labels.csv"), skip_header=1, delimiter=",")[:, 2]
+tremours = np.genfromtxt(path.join(cd, "features", "acceleration", "boba_apr11_labels.csv"), skip_header=1, delimiter=",")[:, 2]
 video_file = path.join(cd, "raw", "2d", "boba_apr11_camera1.mp4")
 output_file = path.join(cd, "skeleton", "boba_apr11_skeleton.mp4")
 
