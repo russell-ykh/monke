@@ -2,7 +2,6 @@ import os.path as path
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from monke_skeleton_animation import get_indices
 
 cd = Path(__file__).parent
 data = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
@@ -317,9 +316,9 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
 
     return labels
 
-pose_data = pd.read_csv(path.join(cd, "features", "joints", "boba_apr11_accel.csv"))
-tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
-generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "features", "joints", "boba_apr11_accel_labels.csv"))
+# pose_data = pd.read_csv(path.join(cd, "features", "joints", "boba_apr11_accel.csv"))
+# tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
+# generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "features", "joints", "boba_apr11_accel_labels.csv"))
 
 def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
     labels = []
@@ -347,3 +346,9 @@ def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
 # tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
 # file_name = path.join(cd, "features", "dir_change", "boba_apr11_labels.csv")
 # generate_labelled_seconds(pose_data, tremour_data_raw, file_name)
+
+# Returns the indices of the elements with the given names
+# a: Target array
+# names: Elements to get
+def get_indices(a, elements):
+    return [np.where(a == element)[0] for element in elements]

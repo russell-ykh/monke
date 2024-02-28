@@ -13,10 +13,10 @@ def umap_reduce(data, labels=None, n_neighbors=15, n_components=2):
     reducer.fit(data, y=labels)
     return reducer.embedding_, reducer
 
-def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save_fig=None, hide=-1):
+def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save_fig=None, hide=-1, s=1):
     fig = plt.figure()
     
-    colours = ["tab:blue", "tab:red"]
+    colours = ["tab:blue", "red"]
 
     ax = fig.add_subplot(projection="3d" if three_dimensional else None)
 
@@ -33,12 +33,14 @@ def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save
     cmap = mplc.ListedColormap(colours)
     
     if three_dimensional:
-        ax.scatter(to_plot[:, 0], to_plot[:, 1], to_plot[:, 2], c=to_label, s=1, cmap=cmap)
+        ax.scatter(to_plot[:, 0], to_plot[:, 1], to_plot[:, 2], c=to_label, s=s, cmap=cmap)
     else:
-        ax.scatter(to_plot[:, 0], to_plot[:, 1], c=to_label, s=1, cmap=cmap)
+        ax.scatter(to_plot[:, 0], to_plot[:, 1], c=to_label, s=s, cmap=cmap)
 
     ax.set_ylabel("UMAP Y")
     ax.set_xlabel("UMAP X")
+    ax.set_xbound((-9, 15))
+    ax.set_ybound((-9, 14))
 
     if title is not None:
         ax.set_title(title)
@@ -75,7 +77,7 @@ labels = np.genfromtxt(path.join(cd, "features", "acceleration", "boba_apr11_lab
 
 for i in [-1, 0, 1]:
     save_fig_path = path.join(cd, "features", "acceleration", f"boba_apr11_accel{'_tremor' if i == 0 else ('_normal' if i == 1 else '')}.png")
-    visualise_reduced(reduced, labels, title="Acceleration", save_fig=save_fig_path, hide=i)
+    visualise_reduced(reduced, labels, title="Acceleration", save_fig=save_fig_path, hide=i, s=2)
 
 def quick_umap_results(data, process, labels, n_neighbors=15, n_components=2):
     processed = process(data)

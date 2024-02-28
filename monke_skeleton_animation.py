@@ -3,18 +3,21 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import Button, Slider
 
 import cv2
 
+from monke_features import get_indices, generate_labelled_frames
+
 cd = Path(__file__).parent
 
-data_2d = np.genfromtxt(path.join(cd, "raw", "2d", "boba_apr11_camera1.csv"), skip_header=3, delimiter=",")[:, 1:]
-tremours = np.genfromtxt(path.join(cd, "features", "acceleration", "boba_apr11_labels.csv"), skip_header=1, delimiter=",")[:, 2]
-video_file = path.join(cd, "raw", "2d", "boba_apr11_camera1.mp4")
-output_file = path.join(cd, "skeleton", "boba_apr11_skeleton.mp4")
+data_2d = np.genfromtxt(path.join(cd, "raw", "2d", "bandung_mar27_3_camera1.csv"), skip_header=3, delimiter=",")[:, 1:]
+tremours = generate_labelled_frames(data_2d, pd.read_csv(path.join(cd, "raw", "bandung_mar27_3_tremours.csv")))
+video_file = path.join(cd, "raw", "2d", "bandung_mar27_3_camera1.mp4")
+output_file = path.join(cd, "skeleton", "bandung_mar27_3_skeleton.mp4")
 
 def animated2d(data, tremours, video_file, output_file):
     frames = data.shape[0]
@@ -35,7 +38,9 @@ def animated2d(data, tremours, video_file, output_file):
     fig = plt.figure()
     ax = fig.add_subplot()
 
-    ax.scatter(x[0], y[0], s=1)
+    #DELETE THIS LATER
+    target = np.array([5, 7, 9])
+    #JUST FOR ERIC TESTING
 
     def anim(frame):
         ret, frame_img = cap.read()
@@ -44,14 +49,14 @@ def animated2d(data, tremours, video_file, output_file):
         ax.clear()
         ax.imshow(frame_img)
         ax.set_title(f"{frame} / {frames}")
-        ax.set_xlim(750, 1750)
-        ax.set_ylim(800, 0)
+        ax.set_xlim(1000, 1750)
+        ax.set_ylim(800, 100)
         # ax.set_xlim(0, width)
         # ax.set_ylim(height, 0)
 
-        ax.scatter(x[frame], y[frame])
         tremouring = tremours[frame] == 1 if (frame < len(tremours)) else 0
-        ax.scatter(x[frame], y[frame], c="red" if tremouring else "blue", s=1)
+        ax.scatter(x[frame], y[frame], c="tab:red" if tremouring else "tab:blue", s=1)
+        ax.scatter(x[frame, target], y[frame, target], c="tab:brown" if tremouring else "tab:olive", s=1)
 
         fig.canvas.draw()
 
@@ -62,14 +67,40 @@ def animated2d(data, tremours, video_file, output_file):
         # # Convert RGB to BGR (required by OpenCV)
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         # out.write(img)
-        
-    fa = FuncAnimation(fig, anim, interval=30)
+    
+    def toggle_pause(event):
+        if pause_button.label.get_text() == "Play":
+            # cap.set(cv2.CAP_PROP_POS_FRAMES, int(slider.val)-1)
+            fa.resume()
+            pause_button.label.set_text("Pause")
+        else:
+            fa.pause()
+            pause_button.label.set_text("Play")
+
+    # Function to handle slider changes
+    def on_slider_change(val):
+        fa.pause()
+        # cap.set(cv2.CAP_PROP_POS_FRAMES, int(val)-1)
+        pause_button.label.set_text("Play")
+        anim(int(val))
+
+    pause_ax = plt.axes([0.7, 0.01, 0.1, 0.05])
+    pause_button = Button(pause_ax, "Pause")
+    pause_button.on_clicked(toggle_pause)
+
+    slider_ax = plt.axes([0.2, 0.01, 0.4, 0.03])
+    slider = Slider(slider_ax, 'Frame', 0, frames-1, valinit=1, valstep=1)
+    slider.on_changed(on_slider_change)
+    
+    fa = FuncAnimation(fig, anim, interval=10)
 
     plt.show()
     #fa.save(output_file, fps=fps, extra_args=['-vcodec', 'libx264'])
 
     cap.release()
     out.release()
+
+animated2d(data_2d, tremours, video_file, output_file)
 
 def animated3d(data, tremours):
     frames = data.shape[0]
@@ -116,12 +147,6 @@ def screenshot_annotated(screenshot, x, y, labels, skeleton_sections):
     plt.axis('off')
 
     plt.show()
-
-# Returns the indices of the elements with the given names
-# a: Target array
-# names: Elements to get
-def get_indices(a, elements):
-    return [np.where(a == element)[0] for element in elements]
 
 # frame = 1173
 
@@ -213,5 +238,3 @@ def anim3d_test():
     skeleton = [bottom_indices, top_indices]#, face_indices]
 
     animated3d_upgraded(data_3d, tremours, skeleton)
-
-anim3d_test()
