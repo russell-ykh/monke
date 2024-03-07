@@ -37,10 +37,10 @@ def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save
     else:
         ax.scatter(to_plot[:, 0], to_plot[:, 1], c=to_label, s=s, cmap=cmap)
 
-    ax.set_ylabel("UMAP Y")
     ax.set_xlabel("UMAP X")
-    ax.set_xbound((-9, 15))
-    ax.set_ybound((-9, 14))
+    ax.set_ylabel("UMAP Y")
+    ax.set_xbound((2.5, 8.9))
+    ax.set_ybound((2.0, 7.8))
 
     if title is not None:
         ax.set_title(title)
@@ -72,12 +72,12 @@ def pipeline(data, labels, three_dimensional=False, title=None, save_as=None, sa
 
 # pipeline(data, labels, three_dimensional=True, title="Angular Acceleration of Joints", save_as=save_as_path, save_fig=save_fig_path)
 
-reduced = np.genfromtxt(path.join(cd, "features", "acceleration", "boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
-labels = np.genfromtxt(path.join(cd, "features", "acceleration", "boba_apr11_labels.csv"), skip_header=1, delimiter=",")[:, -1]
+reduced = np.genfromtxt(path.join(cd, "features", "ang3d_change", "boba_apr11_umap2_unsupervised.csv"), skip_header=1, delimiter=",")[:, 1:]
+labels = np.genfromtxt(path.join(cd, "features", "ang3d_change", "boba_apr11_labels.csv"), skip_header=1, delimiter=",")[:, -1]
 
 for i in [-1, 0, 1]:
-    save_fig_path = path.join(cd, "features", "acceleration", f"boba_apr11_accel{'_tremor' if i == 0 else ('_normal' if i == 1 else '')}.png")
-    visualise_reduced(reduced, labels, title="Acceleration", save_fig=save_fig_path, hide=i, s=2)
+    save_fig_path = path.join(cd, "features", "ang3d_change", f"boba_apr11_ang3d{'_tremor' if i == 0 else ('_normal' if i == 1 else '')}.png")
+    visualise_reduced(reduced, labels, title="Change in Angle", save_fig=save_fig_path, hide=i, s=2)
 
 def quick_umap_results(data, process, labels, n_neighbors=15, n_components=2):
     processed = process(data)
