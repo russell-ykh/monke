@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, FFMpegFileWriter
 from matplotlib.widgets import Button, Slider
 
 import cv2
@@ -13,15 +13,6 @@ import cv2
 from monke_features import get_indices, generate_labelled_frames
 
 cd = Path(__file__).parent
-
-# data_2d = np.genfromtxt(path.join(cd, "raw", "2d", "boba_apr11_camera1.csv"), skip_header=3, delimiter=",")[:, 1:]
-# tremours = generate_labelled_frames(data_2d, pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv")))
-# video_file = path.join(cd, "raw", "2d", "boba_apr11_camera1.mp4")
-# output_file = path.join(cd, "skeleton", "boba_apr11_skeleton.mp4")
-
-data_2d = np.genfromtxt(path.join(cd, "raw", "2d", "bandung_mar27_3_camera1.csv"), skip_header=3, delimiter=",")[:, 1:]
-tremours = generate_labelled_frames(data_2d, pd.read_csv(path.join(cd, "raw", "bandung_mar27_3_tremours.csv")))
-video_file = path.join(cd, "raw", "2d", "bandung_mar27_3_camera1.mp4")
 
 class Frame:
     def __init__(self):
@@ -33,7 +24,7 @@ class Frame:
     def get(self):
         return self.value
 
-def animated2d(data, tremours, video_file, output_file=None, skeleton=None):
+def animated2d(data, tremors, video_file, predictions=None, skeleton=None, save_as=None):
     frames = data.shape[0]
     body_parts = data.shape[1] // 3
 
@@ -41,22 +32,11 @@ def animated2d(data, tremours, video_file, output_file=None, skeleton=None):
     x, y = positions[:, :, 0], positions[:, :, 1]
 
     cap = cv2.VideoCapture(video_file)
-
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    if output_file is not None:
-        out = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
 
     fig = plt.figure()
     ax = fig.add_subplot()
-
-    #DELETE THIS LATER
-    # target = np.array([5, 7, 9])
-    #JUST FOR ERIC TESTING
-
     current_frame = Frame()
 
     def anim(frame):
@@ -66,14 +46,19 @@ def animated2d(data, tremours, video_file, output_file=None, skeleton=None):
         ax.clear()
         ax.imshow(frame_img)
 
-        tremoring = tremours[frame] == 1 if (frame < len(tremours)) else 0
-
-        ax.set_title(f"{frame} / {frames}", c="tab:red" if tremoring else "black")
+        truth = tremors[frame] == 1 if (frame < len(tremors)) else 0
+        
+        if predictions != None:
+            pred = predictions[frame] == 1 if (frame < len(predictions)) else 0
+            tremoring = truth or pred
+        else:
+            tremoring = truth
+        
+        ax.set_title(f"{frame} / {frames} {'' if predictions==None else 'TRUTH!!' if truth else 'TRUTH + PRED!!!!!' if pred and truth else 'PRED ONLY 0o0' if pred else ''}", c="tab:red" if tremoring else "black")
+        
         ax.set_axis_off()
-        # ax.set_xlim(1000, 1750)
-        # ax.set_ylim(800, 100)
-        ax.set_xlim(1000, 1700)
-        ax.set_ylim(800, 100)
+        ax.set_xlim(650, 1550)
+        ax.set_ylim(1000, 100)
         
         ax.scatter(x[frame], y[frame], c="tab:red" if tremoring else "tab:blue", s=2, zorder=3)
         
@@ -89,14 +74,6 @@ def animated2d(data, tremours, video_file, output_file=None, skeleton=None):
 
     def update_fa(val):
         anim(current_frame.value)
-
-    if output_file is not None:
-        # Convert the plot to an array
-        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-
-        # # Convert RGB to BGR (required by OpenCV)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        out.write(img)
     
     def toggle_pause(event):
         if pause_button.label.get_text() == "Play":
@@ -123,44 +100,14 @@ def animated2d(data, tremours, video_file, output_file=None, skeleton=None):
     slider = Slider(slider_ax, 'Frame', 0, frames-1, valinit=1, valstep=1)
     slider.on_changed(on_slider_change)
     
-    fa = FuncAnimation(fig, update_fa, interval=10)
+    fa = FuncAnimation(fig, update_fa, interval=fps, save_count=frame_count)
+
+    if save_as:
+        fa.save(save_as, progress_callback=lambda i, n: print(f'Saving frame {i} of {n}') if (i+1)%100==0 else None)
 
     plt.show()
-    #fa.save(output_file, fps=fps, extra_args=['-vcodec', 'libx264'])
 
     cap.release()
-    out.release()
-
-def animated3d(data, tremours):
-    frames = data.shape[0]
-    body_parts = data.shape[1] // 3
-
-    positions = data.reshape((frames, body_parts, 3))
-    x, y, z = positions[:, :, 0], positions[:, :, 1], positions[:, :, 2]
-
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="3d")
-
-    ax.scatter(x[0], y[0], z[0])
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-
-    def anim(frame):
-        ax.clear()
-        ax.set_title(f"{frame} / {frames}")
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.set_zlim(-30, 40)
-        tremouring = tremours[frame] == 1 if (frame < len(tremours)) else 0
-        ax.scatter(x[frame], y[frame], z[frame], c="red" if tremouring else "blue")
-        
-    fa = FuncAnimation(fig, anim, interval=1000/30)
-
-    plt.show()
 
 def screenshot_annotated(screenshot, x, y, labels, skeleton_sections):
     plt.imshow(screenshot)
@@ -199,7 +146,7 @@ skeleton_sections = [bottom_indices, top_indices]#, face_indices]
 # screenshot_annotated(screenshot_rgb, x, y, labels, skeleton_sections)
 # cap.release()
 
-def animated3d_upgraded(data, tremours, skeleton):
+def animated3d(data, tremours, skeleton):
     frames = data.shape[0]
     body_parts = data.shape[1] // 3
 
@@ -267,6 +214,11 @@ def anim3d_test():
     #face_indices = get_indices(labels, ["right_ear", "right_eye", "nose", "left_eye", "left_ear"])
     skeleton = [bottom_indices, top_indices]#, face_indices]
 
-    animated3d_upgraded(data_3d, tremours, skeleton)
+    animated3d(data_3d, tremors, skeleton)
 
-animated2d(data_2d, tremours, video_file, skeleton=skeleton_sections)
+data_2d = np.genfromtxt(path.join(cd, "raw", "2d", "koi_apr11_camera1.csv"), skip_header=3, delimiter=",")[:, 1:]
+tremors = generate_labelled_frames(data_2d, pd.read_csv(path.join(cd, "raw", "tremors", "koi_apr11_tremors.csv")))
+video_file = path.join(cd, "raw", "videos", "koi_apr11_camera1.mp4")
+predictions = np.genfromtxt(path.join(cd, "classification", "predictions_cic", "koi_apr11_predictions.csv"),delimiter=",",skip_header=1)
+# tremors = np.zeros(data_2d.shape[0])
+animated2d(data_2d, tremors, video_file, skeleton=skeleton_sections, save_as=path.join(cd, "skeleton", "koi_apr11_predictions.mp4"))

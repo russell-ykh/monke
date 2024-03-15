@@ -1,0 +1,4 @@
+temporal_segment_start,temporal_segment_end,label
+0,527,0
+527,530,1
+530,708,0

@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-cd = Path(__file__).parent
-data = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
+# cd = Path(__file__).parent
+# data = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
 
 # General-purpose function for processing DLC 3D coordinate data CSV files
 # data: Input data, usually as a Numpy array
@@ -18,21 +18,19 @@ def monke_process(data, process, save_as=None):
     
     return processed
 
+# Calculates velocity
 def vel(data):
     return np.diff(data, axis=0)
 
-# data = np.genfromtxt("Y2S2/Monke/boba_apr11.csv", skip_header=3, delimiter=",")
-# monke_vel(data, "Y2S2/Monke/boba_apr11_vel.csv")
-
+# Calculates acceleration
 def accel(data):
     return np.diff(data, n=2, axis=0)
 
-# file_name = path.join(cd, "accel/boba_apr11_accel.csv")
-# monke_accel()
-
+# Calculates jerk
 def jerk(data):
     return np.diff(data, n=3, axis=0)
 
+# General purpose function for n-th derivative of the pose data
 def diff(n):
     def diff_internal(data):
         return np.diff(data, n=n, axis=0)
@@ -41,8 +39,8 @@ def diff(n):
 # The number of times the sign changes in a second
 def dir_changes(fps=30):
     def dir_changes(data):
-        vel = vel(data)
-        dir_changes_raw = np.sign(vel[:-1, 1:]) != np.sign(vel[1:, 1:])
+        velocity = vel(data)
+        dir_changes_raw = np.sign(velocity[:-1, 1:]) != np.sign(velocity[1:, 1:])
 
         frames = dir_changes_raw.shape[0]
         features = dir_changes_raw.shape[1]
@@ -60,9 +58,6 @@ def dir_changes(fps=30):
         return dir_changes_final
     return dir_changes
 
-# data = np.genfromtxt("Y2S2/Monke/dir_change/boba_apr11_vel.csv", skip_header=1, delimiter=",")
-# monke_dir_changes(data, "Y2S2/Monke/dir_change/boba_apr11_dir_changes.csv")
-
 # The number of times the sign in velocity changes in a second, across all three axes
 # data: monke_dir_changes
 def dir_changes_summed(data):
@@ -73,17 +68,16 @@ def dir_changes_summed(data):
     dir_changes_summed = np.sum(reshaped, axis=2)
     return dir_changes_summed
 
-# data = np.genfromtxt(path.join(cd, "dir_change/boba_apr11_dir_changes.csv"), skip_header=1, delimiter=",")[:, 1:]
-# monke_process(data, monke_dir_changes_summed, save_as=path.join(cd, "dir_change_summed/boba_apr11.csv"))
-
+# The angular velocity.
+# Angular velocity is the angle between the velocity vectors at frame i and frame i+1.
 def ang_changes(data):
     velocity = vel(data)
     
-    frames = vel.shape[0]
-    features = vel.shape[1]
+    frames = velocity.shape[0]
+    features = velocity.shape[1]
     body_parts = features//3
 
-    vel_reshaped = vel.reshape((frames, body_parts, 3))
+    vel_reshaped = velocity.reshape((frames, body_parts, 3))
 
     # u is the velocities (or maybe you could think of them as vectors?) of the current frame
     # v is the velocities of the next frame
@@ -98,9 +92,7 @@ def ang_changes(data):
 
     return ang_changes
 
-# data_path = path.join(cd, "raw/boba_apr11.csv")
-# monke_ang_changes(np.genfromtxt(data_path, skip_header=3, delimiter=","), path.join(cd, "ang_change/boba_apr11_ang_changes.csv"))
-
+# --- HELPER FUNCTIONS FOR 3D ANGULAR VELOCITY FEATURE ---
 def phi_of(x, y):
     temp = np.arctan2(y, x)
     temp[(y <= 0)] += 2*np.pi
@@ -162,11 +154,11 @@ def theta_changes(data):
 
     theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
     return theta_changes
+# --- END OF HELPER FUNCTIONS ---
 
-# data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
-# monke_process(data, phi_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_phi.csv"))
-# monke_process(data, theta_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_theta.csv"))
-
+# The change in 3D angular velocity.
+# Unlike the previous ang_changes feature, this calculates the phi and theta angles of the velocity vector at frame i.
+# It then compares these to the phi and theta angles at frame i+1.
 def ang3d_changes(data):
     phi = phi_changes(data)
     theta = theta_changes(data)
@@ -174,73 +166,16 @@ def ang3d_changes(data):
     return ang3d
 
 # data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
-# monke_process(data, ang3d_changes, save_as=path.join(cd, "ang3d_change", "boba_apr11_ang3d_change.csv"))
 
-# The number of times the angle changes SIGNIFICANTLY in a specified window of time
-# window: number of frames to consider for changes
-# threshold: change in change in angle needed to register as a proper change
-def changes_in_changes(angles, window_size, threshold):
-    changes_in_angle_changes = np.diff(angles, axis=0)
-    frames = changes_in_angle_changes.shape[0]
-    features = changes_in_angle_changes.shape[1]
+# ---- HELPER FUNCTIONS FOR JOINTS FEATURES ----
 
-    num_windows = frames - window_size + 1
-    changes_in_changes = []
+# Returns the indices of the elements with the given names
+# a: Target array
+# names: Elements to get
+def get_indices(a, elements):
+    return [np.where(a == element)[0] for element in elements]
 
-    for i in range(num_windows):
-        window_raw = angles[i:i+window_size-1]
-        window = changes_in_angle_changes[i:i+window_size-1]
-        window_next = changes_in_angle_changes[i+1:i+window_size]
-        sign_changes = np.sign(window_next) != np.sign(window)
-
-        masked = window_raw * sign_changes
-        counts = []
-        for feature in range(features):
-            differences = np.diff(masked[:, feature][masked[:, feature] != 0])
-            count = np.count_nonzero(np.abs(differences) > threshold, axis=0)
-            counts.append(count)
-
-        changes_in_changes.append(counts)
-
-    return np.array(changes_in_changes)
-
-def changes_in_changes_in_phi_theta(data):
-    velocity = vel(data)
-    
-    frames = velocity.shape[0]
-    features = velocity.shape[1]
-    body_parts = features//3
-
-    vel_reshaped = velocity.reshape((frames, body_parts, 3))
-
-    # u is the velocities (or maybe you could think of them as vectors?) of the current frame
-    # v is the velocities of the next frame
-    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
-    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
-
-    ang_u = phi_of(ux, uy)
-    ang_v = phi_of(vx, vy)
-
-    temp = np.subtract(ang_v, ang_u)
-    
-    phi_changes = unsign_to_sign_ang_change(temp)
-
-    hyp_u = np.sqrt(np.add(ux**2, uy**2))
-
-    hyp_v = np.sqrt(np.add(vx**2, vy**2))
-
-    ang_u = np.array(theta_of(uz, hyp_u))
-    ang_v = np.array(theta_of(vz, hyp_v))
-
-    theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
-    phi_cic = changes_in_changes(phi_changes, 30, 0.2)
-    theta_cic = changes_in_changes(theta_changes, 30, 0.2)
-    results = np.concatenate((phi_cic, theta_cic), axis=1)
-    return results
-
-# data = np.genfromtxt(path.join(cd, "raw/boba_apr11.csv"), skip_header=3, delimiter=",")[:, 1:]
-# monke_process(data, changes_in_changes_in_phi_theta, save_as=path.join(cd, "cic", "boba_apr11_cic_t020.csv"))
-
+# A function to create a user-defined list
 def get_joints(headers):
     joints_total = []
     joints_total.append(get_indices(headers, ["right_ankle", "right_knee", "right_hip"]))
@@ -291,6 +226,74 @@ def change_in_change_in_joint_angle(joints):
 
 # monke_process(data, change_in_change_in_joint_angle(joints), save_as=path.join(cd, "joints", "boba_apr11_accel.csv"))
 
+# --- ADVANCED FEATURE PROCESSING FUNCTIONS ---
+
+# The number of times the given feature changes SIGNIFICANTLY in a specified window of time
+# window: number of frames to consider for changes
+# threshold: change in change needed to register as a proper change
+def changes_in_changes(raw, window_size, threshold):
+    cic = np.diff(raw, axis=0)
+    frames = cic.shape[0]
+    features = cic.shape[1]
+
+    num_windows = frames - window_size + 1
+    results = []
+
+    for i in range(num_windows):
+        window_raw = raw[i:i+window_size-1]
+        window = cic[i:i+window_size-1]
+        window_next = cic[i+1:i+window_size]
+        sign_changes = np.sign(window_next) != np.sign(window)
+
+        masked = window_raw * sign_changes
+        counts = []
+        for feature in range(features):
+            differences = np.diff(masked[:, feature][masked[:, feature] != 0])
+            count = np.count_nonzero(np.abs(differences) > threshold, axis=0)
+            counts.append(count)
+
+        results.append(counts)
+
+    return np.array(results)
+
+def changes_in_changes_in_phi_theta(data):
+    velocity = vel(data)
+    
+    frames = velocity.shape[0]
+    features = velocity.shape[1]
+    body_parts = features//3
+
+    vel_reshaped = velocity.reshape((frames, body_parts, 3))
+
+    # u is the velocities (or maybe you could think of them as vectors?) of the current frame
+    # v is the velocities of the next frame
+    ux, uy, uz = vel_reshaped[:-1, :, 0], vel_reshaped[:-1, :, 1], vel_reshaped[:-1, :, 2]
+    vx, vy, vz = vel_reshaped[1:, :, 0], vel_reshaped[1:, :, 1], vel_reshaped[1:, :, 2]
+
+    ang_u = phi_of(ux, uy)
+    ang_v = phi_of(vx, vy)
+
+    temp = np.subtract(ang_v, ang_u)
+    
+    phi_changes = unsign_to_sign_ang_change(temp)
+
+    hyp_u = np.sqrt(np.add(ux**2, uy**2))
+
+    hyp_v = np.sqrt(np.add(vx**2, vy**2))
+
+    ang_u = np.array(theta_of(uz, hyp_u))
+    ang_v = np.array(theta_of(vz, hyp_v))
+
+    theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
+    phi_cic = changes_in_changes(phi_changes, 30, 0.2)
+    theta_cic = changes_in_changes(theta_changes, 30, 0.2)
+    results = np.concatenate((phi_cic, theta_cic), axis=1)
+    return results
+
+#accel_new = monke_process(vel(data), lambda x : changes_in_changes(x, 30, 0.2), save_as=path.join(cd, "features", "cic_vel", "boba_apr11_accel_processed.csv"))
+
+# --- END OF ADVANCED FEATURE PROCESSING FUNCTIONS ---
+
 ## ------------------- LABEL MAKING ------------------- ##
 
 def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
@@ -310,6 +313,9 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
     for _ in range(remainder):
         labels.append(0)
 
+    if remainder < 0:
+        labels = labels[:remainder]
+
     if save_as is not None:
         tremours = pd.DataFrame({"label":labels})
         tremours.to_csv(save_as)
@@ -318,7 +324,7 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
 
 # pose_data = pd.read_csv(path.join(cd, "features", "joints", "boba_apr11_accel.csv"))
 # tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
-# generate_labelled_frames(pose_data, tremour_data_raw, path.join(cd, "features", "joints", "boba_apr11_accel_labels.csv"))
+# generate_labelled_frames(accel_new, tremour_data_raw, path.join(cd, "features", "cic_vel", "boba_apr11_accel_labels.csv"))
 
 def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
     labels = []
@@ -346,9 +352,3 @@ def generate_labelled_seconds(pose_data, tremour_data_raw, save_as=None):
 # tremour_data_raw = pd.read_csv(path.join(cd, "raw", "boba_apr11_tremours.csv"))
 # file_name = path.join(cd, "features", "dir_change", "boba_apr11_labels.csv")
 # generate_labelled_seconds(pose_data, tremour_data_raw, file_name)
-
-# Returns the indices of the elements with the given names
-# a: Target array
-# names: Elements to get
-def get_indices(a, elements):
-    return [np.where(a == element)[0] for element in elements]

@@ -1,0 +1,6 @@
+temporal_segment_start,temporal_segment_end,label
+0,639,0
+639,640,1
+640,698,0
+698,700,1
+700,708,0
