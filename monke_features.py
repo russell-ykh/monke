@@ -310,10 +310,10 @@ def generate_labelled_frames(pose_data, tremour_data_raw, save_as=None, fps=30):
     
     remainder = last_frame - len(labels)
 
-    for _ in range(remainder):
-        labels.append(0)
-
-    if remainder < 0:
+    if remainder > 0:
+        for _ in range(remainder):
+            labels.append(0)
+    elif remainder < 0:
         labels = labels[:remainder]
 
     if save_as is not None:

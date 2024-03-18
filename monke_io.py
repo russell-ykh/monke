@@ -22,6 +22,29 @@ def read_pose(id, full_path=False):
 def read_tremors(id, full_path=False):
     return pd.read_csv(id if full_path else path.join(cd, "raw", "tremors", f"{id}_tremors.csv"))
 
+# id: name and date of the desired files
+# full_path (optional): Indicates that the id is the full path of the file rather than the name and date
+# Returns the average likelihood of each DLC pose point without headers or index column
+def read_weights(id1, id2, full_path=False):
+    pose2d1 = read_pose2d(id1, full_path=full_path)
+    pose2d2 = read_pose2d(id2, full_path=full_path)
+
+    rs1 = pose2d1.reshape((pose2d1.shape[0], pose2d1.shape[1]//3, 3))
+    likelihood1 = rs1[:, :, 2]
+
+    rs2 = pose2d2.reshape((pose2d2.shape[0], pose2d2.shape[1]//3, 3))
+    likelihood2 = rs2[:, :, 2]
+
+    frames1 = likelihood1.shape[0]
+    frames2 = likelihood2.shape[0]
+
+    if frames1 > frames2:
+        likelihood1 = likelihood1[:frames2, :]
+    elif frames2 > frames1:
+        likelihood2 = likelihood2[:frames1, :]
+    
+    return np.mean((likelihood1 + likelihood2)/2, axis=1)
+
 # --- 2D DATA FOR VIDEOS AND SKELETONS ---
 
 # id: name and date of the desired file
