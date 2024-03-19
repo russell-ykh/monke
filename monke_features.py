@@ -197,7 +197,7 @@ def change_in_joint_angle(joints):
         body_parts = features//3
 
         reshaped = data.reshape((frames, 3, body_parts))
-        angles_total = None
+        angles_total = []
 
         for joint in joints:
             joint_a = reshaped[:, :, joint[0]]
@@ -209,9 +209,11 @@ def change_in_joint_angle(joints):
             mag_ab = np.linalg.norm(ab, axis=1)
             mag_bc = np.linalg.norm(bc, axis=1)
             angles = np.arccos(dot_product / (mag_ab * mag_bc))
-            angles_total = angles if angles_total is None else np.concatenate((angles_total, angles), axis=1)
+            angles_total.append(angles)
+        
+        angles_merged = np.stack(angles_total, axis=1)
 
-        return np.diff(angles_total, axis=0)
+        return np.diff(angles_merged, axis=0)
 
     return change_in_joint_angle_internal
 
