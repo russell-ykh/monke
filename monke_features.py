@@ -187,11 +187,11 @@ def get_joints(headers):
 # headers = np.genfromtxt(path.join(cd, "raw", "boba_apr11.csv"), delimiter=",", dtype=str)[1, 1:][::3]
 # joints = get_joints(headers)
 
-# The change in 2D angle of joints, manually identified
+# The 2D angle of joints, manually identified
 # data: raw input positional data
 # joints: indices of connected body parts!
-def change_in_joint_angle(joints):
-    def change_in_joint_angle_internal(data):
+def joint_angle(joints):
+    def joint_angle_internal(data):
         frames = data.shape[0]
         features = data.shape[1]
         body_parts = features//3
@@ -213,7 +213,16 @@ def change_in_joint_angle(joints):
         
         angles_merged = np.stack(angles_total, axis=1)
 
-        return np.diff(angles_merged, axis=0)
+        return angles_merged
+
+    return joint_angle_internal
+
+# The change in 2D angle of joints, manually identified
+# data: raw input positional data
+# joints: indices of connected body parts!
+def change_in_joint_angle(joints):
+    def change_in_joint_angle_internal(data):
+        return diff(1)(joint_angle(joints)(data))
 
     return change_in_joint_angle_internal
 
@@ -222,7 +231,7 @@ def change_in_joint_angle(joints):
 # joints: indices of connected body parts!
 def change_in_change_in_joint_angle(joints):
     def change_in_change_in_joint_angle_internal(data):
-        return np.diff(change_in_joint_angle(joints)(data), axis=0)
+        return diff(2)(joint_angle(joints)(data))
 
     return change_in_change_in_joint_angle_internal
 
@@ -258,7 +267,7 @@ def changes_in_changes(raw, window_size, threshold):
 
     return np.array(results)
 
-def changes_in_changes_in_phi_theta(data):
+def changes_in_changes_in_phi_theta(data, window=30, threshold=0.2):
     velocity = vel(data)
     
     frames = velocity.shape[0]
@@ -287,8 +296,8 @@ def changes_in_changes_in_phi_theta(data):
     ang_v = np.array(theta_of(vz, hyp_v))
 
     theta_changes = np.nan_to_num(np.subtract(ang_v, ang_u))
-    phi_cic = changes_in_changes(phi_changes, 30, 0.2)
-    theta_cic = changes_in_changes(theta_changes, 30, 0.2)
+    phi_cic = changes_in_changes(phi_changes, window, threshold)
+    theta_cic = changes_in_changes(theta_changes, window, threshold)
     results = np.concatenate((phi_cic, theta_cic), axis=1)
     return results
 
