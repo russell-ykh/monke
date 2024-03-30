@@ -86,3 +86,114 @@ def test_features():
 
     summary_to = path.join(cd, "classification", "rf_results_summary.csv")
     pd.DataFrame(summary).to_csv(summary_to)
+
+def prep_train_test_data(pose_data, labels, train_names, test_names=None, weights=None, test_size=0.2):
+    training_data = []
+    training_labels = []
+
+    if weights is not None:
+        training_weights = []
+
+    testing_data = {}
+    testing_labels = {}
+
+    for name in train_names:
+        pose_train = pose_data[name]
+        labels_train = labels[name]
+
+        if weights is not None:
+            weights_train = weights[name]
+            X_train, X_test, y_train, y_test, z_train, z_test = train_test_split(pose_train, labels_train, weights_train, test_size=test_size)
+            training_weights.append(z_train)
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(pose_train, labels_train, test_size=test_size)
+
+        training_data.append(X_train)
+        training_labels.append(y_train)
+
+        if test_names is not None:
+            if name in test_names:
+                testing_data[name] = X_test
+                testing_labels[name] = y_test
+        else:
+            testing_data[name] = X_test
+            testing_labels[name] = y_test
+    
+    if test_names is not None:
+        for name in test_names:
+            if name not in testing_data:
+                pose_test = pose_data[name]
+                labels_test = labels[name]
+                _, X_test, _, y_test = train_test_split(pose_test, labels_test, test_size=test_size)
+                testing_data[name] = X_test
+                testing_labels[name] = y_test
+        
+    if(len(training_data) > 1):
+        training_data = np.concatenate(training_data)
+        training_labels = np.concatenate(training_labels)
+        if weights is not None:
+            training_weights = np.concatenate(training_weights)
+    else:
+        training_data = training_data[0]
+        training_labels = training_labels[0]
+        if weights is not None:
+            training_weights = training_weights[0]
+
+    if weights is None:
+        return training_data, testing_data, training_labels, testing_labels
+    else:
+        return training_data, testing_data, training_labels, testing_labels, training_weights
+
+def prep_multi_train_test_data(pose_data, labels, train_names, test_names=None, weights=None, test_size=0.2):
+    training_data = {}
+    training_labels = {}
+
+    if weights is not None:
+        training_weights = {}
+
+    testing_data = {}
+    testing_labels = {}
+
+    for name in train_names:
+        pose_train = pose_data[name]
+        labels_train = labels[name]
+
+        if weights is not None:
+            weights_train = weights[name]
+            X_train, X_test, y_train, y_test, z_train, z_test = train_test_split(pose_train, labels_train, weights_train, test_size=test_size)
+            training_weights[name] = z_train
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(pose_train, labels_train, test_size=test_size)
+
+        training_data[name] = X_train
+        training_labels[name] = y_train
+        
+        if test_names is not None:
+            if name in test_names:
+                testing_data[name] = X_test
+                testing_labels[name] = y_test
+        else:
+            testing_data[name] = X_test
+            testing_labels[name] = y_test
+
+    if weights is None:
+        return training_data, testing_data, training_labels, testing_labels
+    else:
+        return training_data, testing_data, training_labels, testing_labels, training_weights
+
+def process_data(pose_data, labels, process):
+    processed_data = {}
+    processed_labels = {}
+
+    for name in pose_data:
+        processed_data[name] = process(pose_data[name])
+        processed_labels[name] = labels[name][:processed_data[name].shape[0]]
+    
+    return processed_data, processed_labels
+
+def test_classify(clf, test_data, test_labels):
+    predicted_labels = clf.predict(test_data)
+    mcc = matthews_corrcoef(test_labels, predicted_labels)
+    f1 = f1_score(test_labels, predicted_labels)
+    acc = accuracy_score(test_labels, predicted_labels)
+    return {"predictions":predicted_labels, "mcc":mcc, "f1":f1, "accuracy":acc}
