@@ -175,6 +175,15 @@ def prep_multi_train_test_data(pose_data, labels, train_names, test_names=None, 
         else:
             testing_data[name] = X_test
             testing_labels[name] = y_test
+    
+    if test_names is not None:
+        for name in test_names:
+            if name not in testing_data:
+                pose_test = pose_data[name]
+                labels_test = labels[name]
+                _, X_test, _, y_test = train_test_split(pose_test, labels_test, test_size=test_size)
+                testing_data[name] = X_test
+                testing_labels[name] = y_test
 
     if weights is None:
         return training_data, testing_data, training_labels, testing_labels
