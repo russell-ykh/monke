@@ -4,7 +4,7 @@ from pathlib import Path
 import glob
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, precision_score, recall_score, f1_score, accuracy_score, ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, precision_score, recall_score, f1_score, accuracy_score, matthews_corrcoef, ConfusionMatrixDisplay
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -87,7 +87,9 @@ def test_features():
     summary_to = path.join(cd, "classification", "rf_results_summary.csv")
     pd.DataFrame(summary).to_csv(summary_to)
 
-def prep_train_test_data(pose_data, labels, train_names, test_names=None, weights=None, test_size=0.2):
+def prep_train_test_data(pose_data, labels, train_names, test_names=None, weights=None, test_size=0.2, train_size = None):
+    if train_size == None:
+        train_size = 1 - test_size
     training_data = []
     training_labels = []
 
@@ -103,10 +105,10 @@ def prep_train_test_data(pose_data, labels, train_names, test_names=None, weight
 
         if weights is not None:
             weights_train = weights[name]
-            X_train, X_test, y_train, y_test, z_train, z_test = train_test_split(pose_train, labels_train, weights_train, test_size=test_size)
+            X_train, X_test, y_train, y_test, z_train, z_test = train_test_split(pose_train, labels_train, weights_train, test_size=test_size, train_size=train_size)
             training_weights.append(z_train)
         else:
-            X_train, X_test, y_train, y_test = train_test_split(pose_train, labels_train, test_size=test_size)
+            X_train, X_test, y_train, y_test = train_test_split(pose_train, labels_train, test_size=test_size, train_size=train_size)
 
         training_data.append(X_train)
         training_labels.append(y_train)
