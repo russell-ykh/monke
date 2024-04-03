@@ -242,7 +242,8 @@ def change_in_change_in_joint_angle(joints):
 # The number of times the given feature changes SIGNIFICANTLY in a specified window of time
 # window: number of frames to consider for changes
 # threshold: change in change needed to register as a proper change
-def changes_in_changes(raw, window_size, threshold):
+# skip: number of frames to move between windows
+def changes_in_changes(raw, window_size, threshold, skip=1):
     cic = np.diff(raw, axis=0)
     frames = cic.shape[0]
     features = cic.shape[1]

@@ -13,7 +13,7 @@ def umap_reduce(data, labels=None, n_neighbors=15, n_components=2):
     reducer.fit(data, y=labels)
     return reducer.embedding_, reducer
 
-def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save_fig=None, hide=-1, s=1):
+def visualise_reduced(reduced, labels, x_bound=None, y_bound=None, three_dimensional=False, title=None, save_fig=None, hide=-1, s=1):
     fig = plt.figure()
     
     colours = ["tab:blue", "red"]
@@ -39,8 +39,12 @@ def visualise_reduced(reduced, labels, three_dimensional=False, title=None, save
 
     ax.set_xlabel("UMAP X")
     ax.set_ylabel("UMAP Y")
-    # ax.set_xbound((-11, 15.5))
-    # ax.set_ybound((17, -8))    
+
+    if x_bound is not None:
+        ax.set_xbound(x_bound)
+
+    if y_bound is not None:
+        ax.set_ybound(y_bound)
 
     if title is not None:
         ax.set_title(title)
@@ -69,16 +73,16 @@ def pipeline(data, labels, three_dimensional=False, title=None, save_as=None, sa
 
 # data = np.genfromtxt(path.join(cd, "features", "cic_vel", "boba_apr11_accel_processed.csv"), skip_header=1, delimiter=",")[:, 1:]
 # labels = pd.read_csv(path.join(cd, "features", "cic_vel", "boba_apr11_accel_labels.csv"))["label"]
-# save_as_path = path.join(cd, "features", "cic_vel", "boba_apr11_accel_umap.csv")
+# save_as_path = path.join(cd, "features", "cic_vel", "boba_apr11_dir_change_umap.csv")
 
 # reduced = pipeline(data, labels, three_dimensional=True, save_as=save_as_path)
 
-reduced = np.genfromtxt(path.join(cd, "features", "cic_vel", "boba_apr11_accel_umap.csv"), skip_header=1, delimiter=",")[:, 1:]
-labels = np.genfromtxt(path.join(cd, "features", "cic_vel", "boba_apr11_accel_labels.csv"), skip_header=1, delimiter=",")[:, -1]
+# reduced = np.genfromtxt(path.join(cd, "features", "cic_vel", "boba_apr11_accel_umap.csv"), skip_header=1, delimiter=",")[:, 1:]
+# labels = np.genfromtxt(path.join(cd, "features", "cic_vel", "boba_apr11_accel_labels.csv"), skip_header=1, delimiter=",")[:, -1]
 
-for i in [-1, 0, 1]:
-    save_fig_path = path.join(cd, "features", "cic_vel", f"boba_apr11_accel{'_tremor' if i == 0 else ('_normal' if i == 1 else '')}.png")
-    visualise_reduced(reduced, labels, title="Directional Change (ws=30, t=0.2)", save_fig=save_fig_path, hide=i, s=2)
+# for i in [-1, 0, 1]:
+#     save_fig_path = path.join(cd, "features", "cic_vel", f"boba_apr11_accel{'_tremor' if i == 0 else ('_normal' if i == 1 else '')}.png")
+#     visualise_reduced(reduced, labels, title="Directional Change (ws=30, t=0.2)", save_fig=save_fig_path, hide=i, s=2)
 
 def quick_umap_results(data, process, labels, n_neighbors=15, n_components=2):
     processed = process(data)
