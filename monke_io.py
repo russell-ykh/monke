@@ -12,6 +12,13 @@ cd = Path(__file__).parent
 
 # id: name and date of the desired file
 # full_path (optional): Indicates that the id is the full path of the file rather than the name and date
+# Returns the headers of a pose data file
+def read_header(id, full_path=False):
+    headers_raw = np.genfromtxt(id if full_path else path.join(cd, "raw", "pose", f"{id}.csv"), delimiter=",", dtype=str)[1, 1:]
+    return headers_raw[::3]
+
+# id: name and date of the desired file
+# full_path (optional): Indicates that the id is the full path of the file rather than the name and date
 # Returns the raw pose data without headers or index column
 def read_pose(id, full_path=False):
     return np.genfromtxt(id if full_path else path.join(cd, "raw", "pose", f"{id}.csv"), delimiter=",", skip_header=3)[:, 1:]
